@@ -1,5 +1,5 @@
-import { SUO_KB, QI_KB, SUO_S, QI_S } from '../../constants/qs'
-import { J2000 } from '../../constants/'
+import { SUO_KB, QI_KB, SUO_S, QI_S } from '../constants/qs'
+import { J2000 } from '../constants'
 import { S_aLonT2, S_aLonT, MS_aLonT, MS_aLonT2 } from './xl'
 import { dtT } from './deltaT'
 

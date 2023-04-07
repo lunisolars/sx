@@ -2,7 +2,7 @@
 // const { PI } = Math
 // import { XL0 } from '../constants/xl0'
 // import { XL1 } from '../constants/xl1'
-import { RAD } from '../../constants'
+import { RAD } from '../constants'
 
 //=================================三角函数等=======================================
 const {
