@@ -1,5 +1,5 @@
 {
-  "name": "@lunisolar/sx-utils",
+  "name": "@lunisolar/sx",
   "version": "0.1.0",
   "description": "寿星天文历工具",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
   "keywords": [],
   "repository": {
     "type": "git",
-    "url": "git@github.com:lunisolar-js/sx-utils.git"
+    "url": "git@github.com:lunisolar-js/sx.git"
   },
   "license": "MIT",
   "devDependencies": {
