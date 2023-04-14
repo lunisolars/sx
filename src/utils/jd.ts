@@ -55,7 +55,7 @@ export const JD = {
   },
   DD2str: function (r: JDR) {
     //日期转为串
-    let Y = '     ' + r.Y,
+    let Y = '' + r.Y,
       M = '0' + r.M,
       D = '0' + r.D
     let h = r.h,

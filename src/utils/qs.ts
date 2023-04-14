@@ -134,7 +134,7 @@ export const SSQ = {
    * @param qs qs='气'时，算节气的儒略日
    */
   calc: function (jd: number, qs: string) {
-    jd += 2451545
+    jd += J2000
     let i, D, n
     let B = this.suoKB,
       pc = 14
@@ -160,7 +160,7 @@ export const SSQ = {
       D = B[i] + B[i + 1] * Math.floor((jd + pc - B[i]) / B[i + 1])
       D = Math.floor(D + 0.5)
       if (D == 1683460) D++ //如果使用太初历计算-103年1月24日的朔日,结果得到的是23日,这里修正为24日(实历)。修正后仍不影响-103的无中置闰。如果使用秦汉历，得到的是24日，本行D不会被执行。
-      return D - 2451545
+      return D - J2000
       // } else if (jd >= f2 && jd < f3) {
     } else {
       //定气或定朔
