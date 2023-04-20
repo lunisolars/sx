@@ -2,11 +2,12 @@ import { S_aLon, MS_aLonT, S_aLonT } from './utils/xl'
 import { int2 } from './utils/func'
 import { J2000, PI2 } from './constants'
 import { dtT } from './utils/deltaT'
-import { JD, JDR } from './utils/jd'
+// import { JD as JDX, JDR } from './utils/jd'
 import { qiAccurate } from './utils/qs'
 import { year2Ayear } from './utils/func'
 import { xl1Calc } from './utils/eph0'
 import { DateDict } from '../typings/types'
+import { JD } from './class/jd'
 
 export const jqmc = new Array(
   '冬至',
@@ -38,10 +39,9 @@ export const jqmc = new Array(
 type ComputeSolarTermResItem = {
   index: number
   d0: number
-  date: JDR
+  jd: JD
   d: number
-  jd: number
-  timeStr: string
+  jdn: number
   name: string
 }
 
@@ -53,7 +53,15 @@ type YeaarQsCacheItem = {
 export const yearQsCache = new Map<string, YeaarQsCacheItem>()
 
 export function getYearBd0(year: number) {
-  return int2(JD.JD(year, 1, 1 + ((0.1 / 60 + 0) / 60 + 12) / 24)) - J2000
+  const dd = {
+    year,
+    month: 1,
+    day: 1,
+    hour: 12,
+    minute: 0,
+    second: 0.1
+  }
+  return int2(JD.date2jdn(dd, true)) - J2000
 }
 
 export const computeYearQs = (year: number) => {
@@ -79,23 +87,22 @@ export const computeYearQs = (year: number) => {
     const idx = (xn + 23) % 24
     w += PI2 / 24
     if (D < Bd0) continue
-    const jd = J2000 + d
-    const date = JD.DD(jd)
+    const jdn = J2000 + d
+    const jd = new JD(jdn)
     const name = jqmc[xn]
     solarTerm.push({
-      d0: Bd0 + date.D - 1,
+      d0: Bd0 + jd.day - 1,
+      jd,
       index: idx,
       name,
-      date,
-      timeStr: JD.timeStr(d),
       d,
-      jd
+      jdn
     })
   }
 
   const newMoons = computeMoon(year, 0)
-  let mk = int2((Bd0 + J2000 - newMoons[1].jd) / 30)
-  if (mk < 13 && newMoons[mk + 1].jd <= Bd0 + J2000) mk++ //农历所在月的序数
+  let mk = int2((Bd0 + J2000 - newMoons[1].jdn) / 30)
+  if (mk < 13 && newMoons[mk + 1].jdn <= Bd0 + J2000) mk++ //农历所在月的序数
   console.log('mk', mk)
 
   // const newMoons2 = []
@@ -125,12 +132,13 @@ export function computeMoon(year: number | string, angle: number) {
   for (let i = 0; i < n; i++) {
     T = MS_aLonT((n0 + i + angle / 360) * 2 * Math.PI) //精确时间计算,入口参数是当年各朔望黄经
     const r = xl1Calc(2, T, -1) //计算月亮
-    const jd = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
-    const date = JD.DD(jd)
+    // const jdn = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
+    const jdn = T * 36525 + J2000 - dtT(T * 36525)
+    const jd = new JD(jdn)
+    // const date = JDX.DD(jdn)
     const item = {
+      jdn,
       jd,
-      date,
-      dateStr: JD.DD2str(date),
       r // 月地距离
     }
     // if (i % 50 == 0) (s += s2), (s2 = '')
@@ -151,13 +159,14 @@ export function computeSolarTerm(year: number | string) {
   const res = []
   for (let i = -6; i < n; i++) {
     const T = S_aLonT((y + (i * 15) / 360 + 1) * 2 * Math.PI) //精确节气时间计算
-    const jd = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
-    const date = JD.DD(jd)
+    // const jdn = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
+    const jdn = T * 36525 + J2000 - dtT(T * 36525)
+    const jd = new JD(jdn)
+    // const date = JDX.DD(jdn)
     const xn = (i + 6) % 24
     const item = {
       jd,
-      date,
-      dateStr: JD.DD2str(date),
+      jdn,
       idx: (xn + 23) % 24,
       name: jqmc[xn]
     }
@@ -170,10 +179,10 @@ export function computeYearLunarMonths(year: number) {
   const Bd0 = getYearBd0(year)
   const newMoons = computeMoon(year, 0) // 从往年冬至第一个朔日开始取
   const solarTerms = computeSolarTerm(year)
-  let mk = int2((Bd0 + J2000 - newMoons[0].jd) / 30)
+  let mk = int2((Bd0 + J2000 - newMoons[0].jdn) / 30)
   // console.log(newMoons, mk)
-  if (mk < 13 && newMoons[mk + 1].jd <= Bd0 + J2000) mk++ //农历所在月的序数
-  const ym = new Array(13).map(i => i - 1)
+  if (mk < 13 && newMoons[mk + 1].jdn <= Bd0 + J2000) mk++ //农历所在月的序数
+  // const ym = new Array(13).map(i => i - 1)
   //无中气置闰法确定闰月,(气朔结合法,数据源需有冬至开始的的气和朔)
   let leap: number = -1
   if (newMoons[12].jd <= solarTerms[24].jd) {
@@ -189,27 +198,24 @@ export function computeYearLunarMonths(year: number) {
       //   2 * i + 1 < 25 ? solarTerms[2 * i + 1].dateStr : '',
       //   2 * i + 1 < 25 ? solarTerms[2 * i + 1].name : ''
       // )
-      console.log(
-        JD.JD2str(int2(newMoons[i].jd - 8 / 24)),
-        JD.JD2str(int2(solarTerms[2 * i].jd - 8 / 24))
-      )
+      // console.log(JDX.JD2str(int2(newMoons[i].jdn)), JDX.JD2str(int2(solarTerms[2 * i].jdn)))
       // if (int2(newMoons[i].jd - 8 / 24) > int2(solarTerms[2 * i].jd - 8 / 24)) leap = i
       if (
-        parseInt(`${newMoons[i].date.M}${newMoons[i].date.D}`) >
-        parseInt(`${solarTerms[2 * i].date.M}${solarTerms[2 * i].date.D}`)
+        parseInt(`${newMoons[i].jd.format('MMDD')}`) >
+        parseInt(`${solarTerms[2 * i].jd.format('MMDD')}`)
       )
         leap = i
       if (i > leap) break
     }
   }
-  console.log(
-    'newMoon',
-    newMoons.map(i => i.dateStr)
-  )
-  const test = [
-    8363, 8392, 8422, 8451, 8481, 8510, 8539, 8569, 8599, 8628, 8658, 8688, 8717, 8747, 8776
-  ].map(i => JD.JD2str(i + J2000))
-  console.log('test', test)
-  console.log('leap', leap)
+  // console.log(
+  //   'newMoon',
+  //   newMoons.map(i => i.jd.format())
+  // )
+  // const test = [
+  //   8363, 8392, 8422, 8451, 8481, 8510, 8539, 8569, 8599, 8628, 8658, 8688, 8717, 8747, 8776
+  // ].map(i => JDX.JD2str(i + J2000))
+  // console.log('test', test)
+  // console.log('leap', leap)
   // for (let i)
 }
