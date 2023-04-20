@@ -82,22 +82,22 @@ export function date2DateDict(date?: Date | Partial<DateDict> | number): DateDic
   }
   if (date instanceof Date) {
     return {
-      Y: date.getUTCFullYear(),
-      M: date.getUTCMonth() + 1,
-      D: date.getUTCDate(),
-      h: date.getUTCHours(),
-      m: date.getUTCMinutes(),
-      s: date.getUTCSeconds()
+      year: date.getUTCFullYear(),
+      month: date.getUTCMonth() + 1,
+      day: date.getUTCDate(),
+      hour: date.getUTCHours(),
+      minute: date.getUTCMinutes(),
+      second: date.getUTCSeconds()
     }
   }
   const now = new Date()
   return {
-    Y: date?.Y ?? now.getUTCFullYear(),
-    M: date?.M ?? now.getUTCMonth() + 1,
-    D: date?.D ?? now.getUTCDate(),
-    h: typeof date === 'undefined' ? now.getUTCHours() : date.h ?? 0,
-    m: typeof date === 'undefined' ? now.getUTCMinutes() : date.m ?? 0,
-    s: typeof date === 'undefined' ? now.getUTCSeconds() : date.s ?? 0
+    year: date?.year ?? now.getUTCFullYear(),
+    month: date?.month ?? now.getUTCMonth() + 1,
+    day: date?.day ?? now.getUTCDate(),
+    hour: typeof date === 'undefined' ? now.getUTCHours() : date.hour ?? 0,
+    minute: typeof date === 'undefined' ? now.getUTCMinutes() : date.minute ?? 0,
+    second: typeof date === 'undefined' ? now.getUTCSeconds() : date.second ?? 0
   }
 }
 
