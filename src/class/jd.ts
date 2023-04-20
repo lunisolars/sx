@@ -12,7 +12,7 @@ export class JD {
     }
     this.config = Object.assign({}, defaultConfig, config)
     this.jdn = jdn
-    this.timezoneOffset = new Date().getTimezoneOffset()
+    this.timezoneOffset = this.config.isUTC ? 0 : new Date().getTimezoneOffset()
   }
 
   /**
@@ -24,19 +24,18 @@ export class JD {
   static date2jdn(date?: Date | Partial<DateDict> | number, isUTC = false) {
     const dateDict = date2DateDict(date) as DateDict
     const now = new Date()
-    let year = dateDict?.Y ?? now.getFullYear()
-    let month = dateDict?.M ?? now.getMonth() + 1
-    let day = dateDict?.D ?? now.getDate()
-    const hour = dateDict?.h ?? 0
-    const m = dateDict?.m ?? 0
-    const s = dateDict?.s ?? 0
+    let year = dateDict?.year ?? now.getFullYear()
+    let month = dateDict?.month ?? now.getMonth() + 1
+    let day = dateDict?.day ?? now.getDate()
+    const hour = dateDict?.hour ?? 0
+    const m = dateDict?.minute ?? 0
+    const s = dateDict?.second ?? 0
     const tzOffset = now.getTimezoneOffset() // -480
     console.log('date2jdn', date2jdn(new Date(year, month - 1, day, hour, m, s)))
     let dig = hour / 24 + m / (24 * 60) + s / (24 * 60 * 60)
     // 减去时区差
     console.log(date && typeof date !== 'number' && !(date instanceof Date) && !isUTC)
     if (date && typeof date !== 'number' && !(date instanceof Date) && !isUTC) {
-      console.log('111')
       dig += tzOffset / (24 * 60)
     }
 
@@ -65,15 +64,16 @@ export class JD {
    * @param jdn 儒略日数
    * @returns DateDict
    */
-  static jdn2gre(jdn: number) {
+  static jdn2gre(jdn: number): Required<DateDict> {
     //儒略日数转公历
-    const r: DateDict = {
-      Y: 0,
-      M: 0,
-      D: 0,
-      h: 0,
-      m: 0,
-      s: 0
+    const r: Required<DateDict> = {
+      year: 0,
+      month: 0,
+      day: 0,
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millis: 0
     }
     let D = int2(jdn + 0.5),
       F = jdn + 0.5 - D,
@@ -83,31 +83,33 @@ export class JD {
       D += 1 + c - int2(c / 4)
     }
     D += 1524
-    r.Y = int2((D - 122.1) / 365.25) //年数
-    D -= int2(365.25 * r.Y)
-    r.M = int2(D / 30.601) //月数
-    D -= int2(30.601 * r.M)
-    r.D = D //日数
-    if (r.M > 13) {
-      r.M -= 13
-      r.Y -= 4715
+    r.year = int2((D - 122.1) / 365.25) //年数
+    D -= int2(365.25 * r.year)
+    r.month = int2(D / 30.601) //月数
+    D -= int2(30.601 * r.month)
+    r.day = D //日数
+    if (r.month > 13) {
+      r.month -= 13
+      r.year -= 4715
     } else {
-      r.M -= 1
-      r.Y -= 4716
+      r.month -= 1
+      r.year -= 4716
     }
     //日的小数转为时分秒
     F *= 24
-    r.h = int2(F)
-    F -= r.h
+    r.hour = int2(F)
+    F -= r.hour
     F *= 60
-    r.m = int2(F)
-    F -= r.m
+    r.minute = int2(F)
+    F -= r.minute
     F *= 60
-    r.s = F
+    r.second = int2(F)
+    F -= r.second
+    r.millis = int2(F * 1000)
     return r
   }
 
-  toGre(): DateDict {
+  toGre(): Required<DateDict> {
     const cacheKey = 'jd:toGre'
     if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)
     const jdn = this.jdn
@@ -118,27 +120,31 @@ export class JD {
   }
 
   get year() {
-    return this.toGre().Y
+    return this.toGre().year
   }
 
   get month() {
-    return this.toGre().M
+    return this.toGre().month
   }
 
   get day() {
-    return this.toGre().D
+    return this.toGre().day
   }
 
   get hour() {
-    return this.toGre().h
+    return this.toGre().hour
   }
 
   get minute() {
-    return this.toGre().m
+    return this.toGre().minute
   }
 
   get second() {
-    return int2(this.toGre().s)
+    return this.toGre().second
+  }
+
+  get millis() {
+    return this.toGre().millis
   }
 
   get dayOfWeek() {
@@ -155,6 +161,15 @@ export class JD {
       const m = hour < 12 ? 'AM' : 'PM'
       return isLowercase ? m.toLowerCase() : m
     }
+    const padZoneStr = (timezoneOffset: number) => {
+      const minutes = Math.abs(timezoneOffset)
+      const hourOffset = Math.floor(minutes / 60)
+      const minuteOffset = minutes % 60
+      return `${timezoneOffset <= 0 ? '+' : '-'}${String(hourOffset).padStart(2, '0')}:${String(
+        minuteOffset
+      ).padStart(2, '0')}`
+    }
+
     const y = this.year
     const M = this.month
     const D = this.day
@@ -163,6 +178,7 @@ export class JD {
     const s = this.second
     const w = this.dayOfWeek
     const h = H % 12 || 12
+    const tz = padZoneStr(this.timezoneOffset)
     const matches = {
       J: String(this.jdn),
       YY: String(y).slice(-2),
@@ -181,7 +197,10 @@ export class JD {
       m: String(m),
       mm: String(m).padStart(2, '0'),
       s: String(s),
-      ss: String(s).padStart(2, '0')
+      ss: String(s).padStart(2, '0'),
+      SSS: String(this.millis).padStart(3, '0'),
+      Z: tz,
+      ZZ: tz.replace(':', '')
     }
 
     return str.replace(REGEX_FORMAT, (match, $1) => {
