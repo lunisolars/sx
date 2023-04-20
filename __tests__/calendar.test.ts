@@ -1,5 +1,20 @@
 import { computeMoon, computeSolarTerm, computeYearLunarMonths } from '../src/calendar'
 // import lunisolar from 'lunisolar'
+import { JD } from '../src/class/jd'
+
+const jdFormat = (jd: JD) => {
+  let h = jd.hour
+  let m = jd.minute
+  let s = jd.second
+  let ms = jd.millis
+  if (ms > 500) s++
+  if (s >= 60) m++, (s = 0)
+  if (m >= 60) h++, (m = 0)
+  return `${jd.format('YYYY-MM-DD')} ${String(h).padStart(2, '0')}:${String(m).padStart(
+    2,
+    '0'
+  )}:${String(s).padStart(2, '0')}`
+}
 
 describe('test calendar', () => {
   it('2023 solarTerm', () => {
@@ -35,11 +50,7 @@ describe('test calendar', () => {
     ]
     const stRes = computeSolarTerm(2023)
 
-    expect(
-      stRes.map(v => {
-        return `${v.dateStr}${v.name}`
-      })
-    ).toEqual(toBe)
+    expect(stRes.map(v => `${jdFormat(v.jd)}${v.name}`)).toEqual(toBe)
   })
 
   it('2023 newMoon', () => {
@@ -61,11 +72,7 @@ describe('test calendar', () => {
     ]
     const stRes = computeMoon(2023, 0)
 
-    expect(
-      stRes.map(v => {
-        return `${v.dateStr} ${v.r.toFixed(2)}千米`
-      })
-    ).toEqual(toBe)
+    expect(stRes.map(v => `${jdFormat(v.jd)} ${v.r.toFixed(2)}千米`)).toEqual(toBe)
   })
 
   it('2000', () => {
@@ -97,6 +104,6 @@ describe('test calendar', () => {
       '2000-12-21 21:37:26冬至'
     ]
     const stRes = computeSolarTerm(2000)
-    expect(stRes.map(v => `${v.dateStr}${v.name}`)).toEqual(toBe)
+    expect(stRes.map(v => `${jdFormat(v.jd)}${v.name}`)).toEqual(toBe)
   })
 })
