@@ -1,10 +1,11 @@
 export type DateDict = {
-  Y: number
-  M: number
-  D: number
-  h: number
-  m: number
-  s: number
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+  second: number
+  millis?: number
 }
 
 export type JDConfig = {
