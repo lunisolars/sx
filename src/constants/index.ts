@@ -1,4 +1,5 @@
 export const J2000 = 2451545 // 2000年1月1日的UT12:00是儒略日2451545
+export const T_YEAR_DAYS = 365.2422 // Tropical year 回归年天数
 
 /**
  * 每弧度的角秒数

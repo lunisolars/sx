@@ -118,7 +118,7 @@ export const computeYearQs = (year: number) => {
 }
 
 /**
- * 定朔 (立冬后的第一个朔日起算)
+ * 定朔 (冬至最近的一个朔日起算)
  * @param angle 月日黄经差角度，0为朔，180为望
  */
 export function computeMoon(year: number | string, angle: number) {
@@ -159,8 +159,8 @@ export function computeSolarTerm(year: number | string) {
   const res = []
   for (let i = -6; i < n; i++) {
     const T = S_aLonT((y + (i * 15) / 360 + 1) * 2 * Math.PI) //精确节气时间计算
-    // const jdn = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
     const jdn = T * 36525 + J2000 - dtT(T * 36525)
+    // const jdn = T * 36525 + J2000 + 8 / 24 - dtT(T * 36525)
     const jd = new JD(jdn)
     // const date = JDX.DD(jdn)
     const xn = (i + 6) % 24
@@ -176,46 +176,70 @@ export function computeSolarTerm(year: number | string) {
 }
 
 export function computeYearLunarMonths(year: number) {
-  const Bd0 = getYearBd0(year)
+  // const Bd0 = getYearBd0(year)
   const newMoons = computeMoon(year, 0) // 从往年冬至第一个朔日开始取
   const solarTerms = computeSolarTerm(year)
-  let mk = int2((Bd0 + J2000 - newMoons[0].jdn) / 30)
-  // console.log(newMoons, mk)
-  if (mk < 13 && newMoons[mk + 1].jdn <= Bd0 + J2000) mk++ //农历所在月的序数
-  // const ym = new Array(13).map(i => i - 1)
+
+  // 初始化月序
+  const ymOffset = newMoons[0].jdn < solarTerms[0].jdn ? -1 : 0
+  const ym = new Array(14).fill(0).map((v, i) => {
+    const m = i + ymOffset
+    if (m < 0) return (m + 12) % 12
+    if (m === 0) return 12
+    return m
+  })
   //无中气置闰法确定闰月,(气朔结合法,数据源需有冬至开始的的气和朔)
-  let leap: number = -1
+  let leapIdx: number = -1
   if (newMoons[12].jd <= solarTerms[24].jd) {
     //第13月的月末没有超过冬至(不含冬至),说明今年含有13个月
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 14; i++) {
       //在13个月中找第1个没有中气的月份
-      // console.log(
-      //   'solarTerms[2 * i]',
-      //   i,
-      //   newMoons[i].dateStr,
-      //   solarTerms[2 * i].dateStr,
-      //   solarTerms[2 * i].name,
-      //   2 * i + 1 < 25 ? solarTerms[2 * i + 1].dateStr : '',
-      //   2 * i + 1 < 25 ? solarTerms[2 * i + 1].name : ''
-      // )
-      // console.log(JDX.JD2str(int2(newMoons[i].jdn)), JDX.JD2str(int2(solarTerms[2 * i].jdn)))
-      // if (int2(newMoons[i].jd - 8 / 24) > int2(solarTerms[2 * i].jd - 8 / 24)) leap = i
       if (
         parseInt(`${newMoons[i].jd.format('MMDD')}`) >
         parseInt(`${solarTerms[2 * i].jd.format('MMDD')}`)
       )
-        leap = i
-      if (i > leap) break
+        leapIdx = i
+      if (i > leapIdx) break
     }
+  }
+  let leap = -1
+  const lunars: {
+    isLeap: boolean
+    month: number
+    jdn: number
+    r: number
+    monthLen: number
+  }[] = new Array(13)
+  for (let i = 0; i < 13; i++) {
+    const monthLen = int2(newMoons[i + 1].jdn - 0.5 + 8 / 24) - int2(newMoons[i].jdn - 0.5 + 8 / 24)
+    console.log('monthLen', newMoons[i + 1].jdn - newMoons[i].jdn)
+    const item = {
+      isLeap: false,
+      month: ym[i],
+      jdn: newMoons[i].jdn,
+      r: newMoons[i].r,
+      monthLen2: newMoons[i + 1].jdn - newMoons[i].jdn,
+      monthLen3: int2(newMoons[i + 1].jdn) - int2(newMoons[i].jdn),
+      monthLen,
+      format: newMoons[i].jd.format()
+    }
+    if (i >= leapIdx && leapIdx !== -1) {
+      let m = ym[i] - 1
+      if (m === 0) m = 12
+      ym[i] = m
+      item.month = m
+      if (i === leapIdx) {
+        leap = m
+        item.isLeap = true
+      }
+    }
+    lunars[i] = item
   }
   // console.log(
   //   'newMoon',
   //   newMoons.map(i => i.jd.format())
   // )
-  // const test = [
-  //   8363, 8392, 8422, 8451, 8481, 8510, 8539, 8569, 8599, 8628, 8658, 8688, 8717, 8747, 8776
-  // ].map(i => JDX.JD2str(i + J2000))
-  // console.log('test', test)
-  // console.log('leap', leap)
+  console.log(lunars)
+  console.log('leap', leapIdx, leap, ym)
   // for (let i)
 }

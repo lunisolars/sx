@@ -18,9 +18,6 @@ const jdFormat = (jd: JD) => {
 
 describe('test calendar', () => {
   it('2023 solarTerm', () => {
-    // computeYearQs(2023)
-    computeYearLunarMonths(2023)
-
     const toBe = [
       '2022-12-22 05:48:11冬至',
       '2023-01-05 23:04:49小寒',
@@ -105,5 +102,13 @@ describe('test calendar', () => {
     ]
     const stRes = computeSolarTerm(2000)
     expect(stRes.map(v => `${jdFormat(v.jd)}${v.name}`)).toEqual(toBe)
+  })
+
+  it('619', () => {
+    // computeYearLunarMonths(2023)
+    // computeYearLunarMonths(2024)
+    computeYearLunarMonths(619)
+    // const stRes = computeSolarTerm(2000)
+    // expect(stRes.map(v => `${jdFormat(v.jd)}${v.name}`)).toEqual(toBe)
   })
 })

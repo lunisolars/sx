@@ -1,5 +1,5 @@
 import { DateDict, JDConfig } from '../../typings/types'
-import { int2, date2DateDict, date2jdn } from '../utils/func'
+import { int2, date2DateDict } from '../utils/func'
 
 export class JD {
   readonly jdn: number
@@ -31,10 +31,10 @@ export class JD {
     const m = dateDict?.minute ?? 0
     const s = dateDict?.second ?? 0
     const tzOffset = now.getTimezoneOffset() // -480
-    console.log('date2jdn', date2jdn(new Date(year, month - 1, day, hour, m, s)))
+    // console.log('date2jdn', date2jdn(new Date(year, month - 1, day, hour, m, s)))
     let dig = hour / 24 + m / (24 * 60) + s / (24 * 60 * 60)
     // 减去时区差
-    console.log(date && typeof date !== 'number' && !(date instanceof Date) && !isUTC)
+    // console.log(date && typeof date !== 'number' && !(date instanceof Date) && !isUTC)
     if (date && typeof date !== 'number' && !(date instanceof Date) && !isUTC) {
       dig += tzOffset / (24 * 60)
     }
