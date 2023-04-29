@@ -239,7 +239,7 @@ export function computeYearLunarMonths(year: number) {
   //   'newMoon',
   //   newMoons.map(i => i.jd.format())
   // )
-  console.log(lunars)
-  console.log('leap', leapIdx, leap, ym)
+  // console.log(lunars)
+  // console.log('leap', leapIdx, leap, ym)
   // for (let i)
 }
