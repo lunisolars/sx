@@ -290,7 +290,7 @@ export class SSQ {
     return res
   }
 
-  getSolarTerms(flag: 0 | 1 = 0) {
+  getSolarTerms(flag: 0 | 1 = 0): { idx: number; jdn: number }[] {
     if (flag === 1) {
       const d0 = this.getD0()
       const w = SSQ.calcSolarTerm(d0)
@@ -328,8 +328,56 @@ export class SSQ {
   getQS() {
     //该年的气
     // const d0 = this.getD0()
-    // const solartTerms = this.getSolarTerms(1)
-    // const newMoonDays = this.getNewMoonDays()
+    const solartTerms = this.getSolarTerms(1)
+    const newMoonDays = this.getNewMoonDays()
+    const ym = new Array(14) // 阴历月序
+    const mLen = new Array(14).fill(0) // 阴历月大小
+    for (let i = 0; i < 14; i++) {
+      mLen[i] = newMoonDays[i + 1] - newMoonDays[i]
+      ym[i] = i
+    }
+
+    //-721年至-104年的后九月及月建问题,与朔有关，与气无关
+    const year = this.year
+    if (year >= -721 && year <= -104) {
+      const ns = new Array()
+      let yy: number
+      for (let i = 0; i < 3; i++) {
+        yy = year + i - 1
+        //颁行历年首, 闰月名称, 月建
+        if (yy >= -721) {
+          ns[i] = SSQ.calcNewMoon(1457698 + int2(0.342 + (yy + 721) * 12.368422) * 29.5306)
+          ns[i + 3] = 13 // 十三月为闰月
+          ns[i + 6] = 2 //春秋历,ly为-722.12.17
+        }
+        if (yy >= -479) {
+          ns[i] = SSQ.calcNewMoon(1546083 + int2(0.5 + (yy + 479) * 12.368422) * 29.5306)
+          ns[i + 3] = 13 // 十三月为闰月
+          ns[i + 6] = 2 //战国历,ly为-480.12.11
+        }
+        if (yy >= -220) {
+          ns[i] = SSQ.calcNewMoon(1640641 + int2(0.866 + (yy + 220) * 12.369) * 29.5306)
+          ns[i + 3] = 209 // 后九用209表示
+          ns[i + 6] = 11 //秦汉历,ly为-221.10.31
+        }
+        var nn, f1
+        for (i = 0; i < 14; i++) {
+          for (nn = 2; nn >= 0; nn--) if (newMoonDays[i] >= ns[nn]) break
+          f1 = int2((newMoonDays[i] - ns[nn] + 15) / 29.5306) //该月积数
+          if (f1 < 12) ym[i] = (f1 + ns[nn + 6] + 10) % 12 // 用数字表示月份名称
+          else ym[i] = ns[nn + 3]
+        }
+      }
+    }
+    //无中气置闰法确定闰月,(气朔结合法,数据源需有冬至开始的的气和朔)
+    let leap = -1
+    if (newMoonDays[13] <= solartTerms[24].jdn) {
+      //第13月的月末没有超过冬至(不含冬至),说明今年含有13个月
+      for (let i = 1; newMoonDays[i + 1] > solartTerms[2 * i].jdn && i < 13; i++) {
+        leap = i
+      } //在13个月中找第1个没有中气的月份
+      for (let i = leap; i < 14; i++) ym[i]--
+    }
   }
 }
 

@@ -240,6 +240,6 @@ export function computeYearLunarMonths(year: number) {
   //   newMoons.map(i => i.jd.format())
   // )
   // console.log(lunars)
-  // console.log('leap', leapIdx, leap, ym)
+  console.log('leap', leapIdx, leap, ym)
   // for (let i)
 }

@@ -18,5 +18,7 @@ describe('test SSQ Class', () => {
       const jd3 = new JD(SSQX.ZQ[i] + J2000, { isUTC: true })
       console.log(jd.format(), jd2.format(), jd3.format())
     })
+    ssq.getQS()
   })
+
 })
