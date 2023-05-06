@@ -223,7 +223,6 @@ export const SSQ = {
 
     //-721年至-104年的后九月及月建问题,与朔有关，与气无关
     var YY = floor((this.ZQ[0] + 10 + 180) / 365.2422) + 2000 //确定年份
-    console.log('YY', YY)
     if (YY >= -721 && YY <= -104) {
       var ns = new Array(),
         yy
