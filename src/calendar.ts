@@ -61,7 +61,7 @@ export function getYearBd0(year: number) {
     minute: 0,
     second: 0.1
   }
-  return int2(JD.date2jdn(dd, true)) - J2000
+  return int2(JD.gre2jdn(dd, true)) - J2000
 }
 
 export const computeYearQs = (year: number) => {
