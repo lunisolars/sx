@@ -1,6 +1,6 @@
 import { XL0 } from '../constants/xl0'
 import { XL1 } from '../constants/xl1'
-import { RAD, XL0_xzb, nutB } from '../constants'
+import { RAD, XL0_xzb, NutB } from '../constants'
 import { gxc_moonLon, gxc_sunLon } from './func'
 
 const {
@@ -290,7 +290,7 @@ export function nutationLon2(t: number) {
     a,
     t2 = t * t,
     dL = 0,
-    B = nutB
+    B = NutB
   for (i = 0; i < B.length; i += 5) {
     if (i == 0) a = -1.742 * t
     else a = 0
