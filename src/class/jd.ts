@@ -1,5 +1,7 @@
-import { DateDict, JDConfig } from '../../typings/types'
-import { int2, date2DateDict } from '../utils/func'
+import { DateDict, JDConfig, GreUnit } from '../../typings/types'
+import { int2, gre2jdn, prettyUnit, parseDateString } from '../utils/func'
+import { GRE_UNITS } from '../constants'
+import { cache } from '@lunisolar/utils'
 
 export class JD {
   readonly jdn: number
@@ -8,7 +10,8 @@ export class JD {
   readonly cache = new Map<string, any>()
   constructor(jdn: number, config?: Partial<JDConfig>) {
     const defaultConfig = {
-      isUTC: false
+      isUTC: false,
+      offset: 0
     }
     this.config = Object.assign({}, defaultConfig, config)
     this.jdn = jdn
@@ -21,41 +24,20 @@ export class JD {
    * @param isUTC is UTC?
    * @returns 儒略日数
    */
-  static date2jdn(date?: Date | Partial<DateDict> | number, isUTC = false) {
-    const dateDict = date2DateDict(date) as DateDict
-    const now = new Date()
-    let year = dateDict?.year ?? now.getFullYear()
-    let month = dateDict?.month ?? now.getMonth() + 1
-    let day = dateDict?.day ?? now.getDate()
-    const hour = dateDict?.hour ?? 0
-    const m = dateDict?.minute ?? 0
-    const s = dateDict?.second ?? 0
-    const tzOffset = now.getTimezoneOffset() // -480
-    // console.log('date2jdn', date2jdn(new Date(year, month - 1, day, hour, m, s)))
-    let dig = hour / 24 + m / (24 * 60) + s / (24 * 60 * 60)
-    // 减去时区差
-    // console.log(date && typeof date !== 'number' && !(date instanceof Date) && !isUTC)
-    if (date && typeof date !== 'number' && !(date instanceof Date) && !isUTC) {
-      dig += tzOffset / (24 * 60)
-    }
-
-    //公历转儒略日
-    let n = 0,
-      G = 0
-    if (year * 372 + month * 31 + int2(day) >= 588829) G = 1 //判断是否为格里高利历日1582*372+10*31+15
-    if (month <= 2) (month += 12), year--
-    if (G) (n = int2(year / 100)), (n = 2 - n + int2(n / 4)) //加百年闰
-    return int2(365.25 * (year + 4716)) + int2(30.6001 * (month + 1)) + day + n - 1524.5 + dig
+  static gre2jdn(date?: Date | Partial<DateDict> | string, isUTC = false) {
+    if (typeof date === 'string') date = parseDateString(date)
+    return gre2jdn(date, isUTC)
   }
 
   /**
    * 通过公历创建儒略日对象
-   * @param dateObj 公历日期字典对象
+   * @param dateDict 公历日期字典对象
    * @param config 设置，主要是isUTC
    * @returns JD实例
    */
-  static fromGre(dateObj?: Partial<DateDict>, config?: Partial<JDConfig>) {
-    const jdn = JD.date2jdn(dateObj, config?.isUTC)
+  static fromGre(dateDict?: Partial<DateDict> | string, config?: Partial<JDConfig>) {
+    if (typeof dateDict === 'string') dateDict = parseDateString(dateDict)
+    const jdn = JD.gre2jdn(dateDict, config?.isUTC)
     return new JD(jdn, config)
   }
 
@@ -64,7 +46,11 @@ export class JD {
    * @param jdn 儒略日数
    * @returns DateDict
    */
-  static jdn2gre(jdn: number): Required<DateDict> {
+  static jdn2gre(jdn: number, isUTC = false): Required<DateDict> {
+    if (!isUTC) {
+      const timezoneOffset = -new Date().getTimezoneOffset()
+      jdn += timezoneOffset / (24 * 60)
+    }
     //儒略日数转公历
     const r: Required<DateDict> = {
       year: 0,
@@ -105,18 +91,20 @@ export class JD {
     F *= 60
     r.second = int2(F)
     F -= r.second
-    r.millis = int2(F * 1000)
+    r.millis = F * 1000
     return r
   }
 
+  @cache('jd:toGre')
   toGre(): Required<DateDict> {
-    const cacheKey = 'jd:toGre'
-    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)
     const jdn = this.jdn
-    const mOffset = this.config.isUTC ? 0 : this.timezoneOffset / (24 * 60)
-    const res = JD.jdn2gre(jdn - mOffset)
-    this.cache.set(cacheKey, res)
+    const mOffset = this.config.offset / (24 * 60)
+    const res = JD.jdn2gre(jdn + mOffset, this.config.isUTC)
     return res
+  }
+
+  clone(): JD {
+    return new JD(this.jdn, this.config)
   }
 
   get year() {
@@ -148,8 +136,32 @@ export class JD {
   }
 
   get dayOfWeek() {
-    const mOffset = this.config.isUTC ? 0 : this.timezoneOffset / (24 * 60)
-    return int2(this.jdn + 1.5 + 7000000 - mOffset) % 7
+    let mOffset = this.config.isUTC ? 0 : -this.timezoneOffset / (24 * 60)
+    mOffset += this.config.offset
+    return int2(this.jdn + 1.5 + 7000000 + mOffset) % 7
+  }
+
+  add(value: number, unit: GreUnit) {
+    const pUnit = prettyUnit(unit)
+    let diff = value
+    let jdn = this.jdn
+    if (pUnit === GRE_UNITS.h) {
+      diff = value / 24
+    } else if (pUnit === GRE_UNITS.m) {
+      diff = value / (24 * 60)
+    } else if (pUnit === GRE_UNITS.s) {
+      diff = value / (24 * 60 * 60)
+    } else if (unit === GRE_UNITS.M || unit === GRE_UNITS.y) {
+      const gre = JD.jdn2gre(this.jdn, this.config.isUTC)
+      diff = 0
+      if (unit === GRE_UNITS.M) gre.month += 1
+      if (unit === GRE_UNITS.y) gre.year += 1
+
+      jdn = JD.gre2jdn(gre, this.config.isUTC)
+    } else if (unit === GRE_UNITS.w) {
+      diff = value / 7
+    }
+    return new JD(jdn + diff, this.config)
   }
 
   format(formatStr?: string) {
