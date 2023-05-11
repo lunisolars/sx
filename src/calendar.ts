@@ -7,7 +7,7 @@ import { qiAccurate } from './utils/qs'
 import { year2Ayear } from './utils/func'
 import { xl1Calc } from './utils/eph0'
 import { DateDict } from '../typings/types'
-import { JD } from './class/jd'
+import { JD } from '@lunisolar/julian'
 
 export const jqmc = new Array(
   '冬至',
@@ -212,7 +212,7 @@ export function computeYearLunarMonths(year: number) {
   }[] = new Array(13)
   for (let i = 0; i < 13; i++) {
     const monthLen = int2(newMoons[i + 1].jdn - 0.5 + 8 / 24) - int2(newMoons[i].jdn - 0.5 + 8 / 24)
-    console.log('monthLen', newMoons[i + 1].jdn - newMoons[i].jdn)
+    // console.log('monthLen', newMoons[i + 1].jdn - newMoons[i].jdn)
     const item = {
       isLeap: false,
       month: ym[i],

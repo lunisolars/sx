@@ -1,6 +1,6 @@
 import { computeMoon, computeSolarTerm, computeYearLunarMonths } from '../src/calendar'
 // import lunisolar from 'lunisolar'
-import { JD } from '../src/class/jd'
+import { JD } from '@lunisolar/julian'
 
 const jdFormat = (jd: JD) => {
   let h = jd.hour

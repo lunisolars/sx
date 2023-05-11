@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@jest/types': ^29.4.2
+  '@lunisolar/julian': ^0.2.0
   '@lunisolar/utils': ^0.1.0
   '@rollup/plugin-node-resolve': ^15.0.1
   '@rollup/plugin-terser': ^0.4.0
@@ -28,6 +29,7 @@ specifiers:
   typescript: ^4.9.5
 
 dependencies:
+  '@lunisolar/julian': 0.2.0
   '@lunisolar/utils': 0.1.0
 
 devDependencies:
@@ -760,6 +762,12 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@lunisolar/julian/0.2.0:
+    resolution: {integrity: sha512-P+qSEW/dChWnCzp8HwnqdphF2ny7l2Z0DDZmb5htb+shKNqkb7dTWHGK06vLconAs/zLEQabEjNXkQHGLCh1aw==}
+    dependencies:
+      '@lunisolar/utils': 0.1.0
+    dev: false
 
   /@lunisolar/utils/0.1.0:
     resolution: {integrity: sha512-HOZIO4rqAIe7PjysafMZVBXfCKHWQuxwNsk+kipw4tcx3Hzgzm34qwgrL743XN0hFMoH+pEkbykAnQ/Wu+TTWQ==}
