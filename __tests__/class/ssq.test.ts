@@ -1,30 +1,108 @@
-import { JD } from '../../src/class/jd'
 import { SSQ } from '../../src/class/ssq'
-import { SSQ as SSQX } from '../../src/utils/qs'
-import { J2000 } from '../../src/constants'
 
-// import { JD as JDX } from '../../src/utils/jd'
+const solarTermNames = [
+  '小寒',
+  '大寒',
+  '立春',
+  '雨水',
+  '惊蛰',
+  '春分',
+  '清明',
+  '谷雨',
+  '立夏',
+  '小满',
+  '芒种',
+  '夏至',
+  '小暑',
+  '大暑',
+  '立秋',
+  '处暑',
+  '白露',
+  '秋分',
+  '寒露',
+  '霜降',
+  '立冬',
+  '小雪',
+  '大雪',
+  '冬至'
+]
+
+function getQsRes(year: number) {
+  const ssq = new SSQ(year)
+  const solarTerms = ssq.getSolarTerms(0)
+  const newMoons = ssq.getMoons(0)
+  const yearQS = ssq.getQS()
+  const res = []
+  for (let i = 0; i < 13; i++) {
+    const v = yearQS.lunarMonths[i]
+    const item = []
+    const mStr = `${v.isLeap ? '闰' : ''}${v.month + 1}${
+      v.len === 30 ? '大' : '小'
+    } ${v.dayJd.format('MM-DD')}(${newMoons[i].jd.format('DD HH:mm:ss')})`
+    item.push(mStr)
+    v.solarTerms.forEach(stv => {
+      const s = `${solarTermNames[stv.value]} ${stv.jd.format('MM-DD')}(${solarTerms[
+        stv.idx
+      ].jd.format('DD HH:mm:ss')})`
+      item.push(s)
+    })
+    res.push(item)
+  }
+  return res
+}
 
 describe('test SSQ Class', () => {
   it('test SSQ 2023', () => {
-    const ssq = new SSQ(2023)
-    // const st = ssq.getSolarTerms(1)
-    // const st2 = ssq.getSolarTerms(0)
-    SSQX.calcY(Math.floor(23) * 365.2422 + 180)
-    // st.map((v, i) => {
-    //   console.log(v, i)
-    //   const jd = new JD(v.jdn, { isUTC: true })
-    //   const jd2 = new JD(st2[i].jdn)
-    //   const jd3 = new JD(SSQX.ZQ[i] + J2000, { isUTC: true })
-    //   console.log(jd.format(), jd2.format(), jd3.format())
-    // })
-    const yearQS = ssq.getQS()
-    const months = ssq.getMoons(0)
-    yearQS.map((v, i) => {
-      const jd = new JD(v.dayJdn, { isUTC: true })
-      const ssqJd = new JD(SSQX.HS[i] + J2000, { isUTC: true })
-      console.log('yearqs', jd.format(), ssqJd.format(), new JD(months[i].jdn).format())
-      console.log(v)
-    })
+    const sqTobe = [
+      ['11小 11-24(24 06:57:12)', '大雪 12-07(07 11:46:15)', '冬至 12-22(22 05:48:11)'],
+      ['12大 12-23(23 18:16:51)', '小寒 01-05(05 23:04:49)', '大寒 01-20(20 16:29:31)'],
+      ['1小 01-22(22 04:53:14)', '立春 02-04(04 10:42:31)', '雨水 02-19(19 06:34:16)'],
+      ['2大 02-20(20 15:05:49)', '惊蛰 03-06(06 04:36:13)', '春分 03-21(21 05:24:24)'],
+      ['闰2小 03-22(22 01:23:07)', '清明 04-05(05 09:13:03)'],
+      ['3小 04-20(20 12:12:30)', '谷雨 04-20(20 16:13:36)', '立夏 05-06(06 02:18:45)'],
+      ['4大 05-19(19 23:53:15)', '小满 05-21(21 15:09:09)', '芒种 06-06(06 06:18:20)'],
+      ['5大 06-18(18 12:37:07)', '夏至 06-21(21 22:57:48)', '小暑 07-07(07 16:30:40)'],
+      ['6小 07-18(18 02:31:48)', '大暑 07-23(23 09:50:26)', '立秋 08-08(08 02:22:52)'],
+      ['7大 08-16(16 17:38:08)', '处暑 08-23(23 17:01:17)', '白露 09-08(08 05:26:42)'],
+      ['8大 09-15(15 09:39:46)', '秋分 09-23(23 14:49:57)', '寒露 10-08(08 21:15:34)'],
+      ['9小 10-15(15 01:55:07)', '霜降 10-24(24 00:20:50)', '立冬 11-08(08 00:35:34)'],
+      ['10大 11-13(13 17:27:22)', '小雪 11-22(22 22:02:41)', '大雪 12-07(07 17:32:55)']
+    ]
+    // console.log(sqTobe)
+    expect(getQsRes(2023)).toEqual(sqTobe)
+  })
+
+  it('test SSQ 2034', () => {
+    const sqTobe = [
+      [
+        '11大 11-22(22 09:38:56)',
+        '小雪 11-22(22 08:15:57)',
+        '大雪 12-07(07 03:44:43)',
+        '冬至 12-21(21 21:45:47)'
+      ],
+      ['闰11小 12-22(22 02:46:17)', '小寒 01-05(05 15:04:18)'],
+      [
+        '12大 01-20(20 18:01:21)',
+        '大寒 01-20(20 08:27:05)',
+        '立春 02-04(04 02:40:56)',
+        '雨水 02-18(18 22:29:59)'
+      ],
+      ['1小 02-19(19 07:10:03)', '惊蛰 03-05(05 20:32:10)'],
+      ['2大 03-20(20 18:14:22)', '春分 03-20(20 21:17:16)', '清明 04-05(05 01:06:00)'],
+      ['3小 04-19(19 03:25:41)', '谷雨 04-20(20 08:03:30)', '立夏 05-05(05 18:08:55)'],
+      ['4小 05-18(18 11:12:22)', '小满 05-21(21 06:56:40)', '芒种 06-05(05 22:06:27)'],
+      ['5大 06-16(16 18:25:43)', '夏至 06-21(21 14:43:57)', '小暑 07-07(07 08:17:25)'],
+      ['6小 07-16(16 02:15:02)', '大暑 07-23(23 01:36:07)', '立秋 08-07(07 18:08:52)'],
+      ['7大 08-14(14 11:52:51)', '处暑 08-23(23 08:47:31)', '白露 09-07(07 21:13:45)'],
+      ['8小 09-13(13 00:13:36)', '秋分 09-23(23 06:39:20)', '寒露 10-08(08 13:06:52)'],
+      ['9大 10-12(12 15:32:26)', '霜降 10-23(23 16:16:13)', '立冬 11-07(07 16:33:25)'],
+      ['10大 11-11(11 09:16:01)', '小雪 11-22(22 14:04:43)', '大雪 12-07(07 09:36:34)']
+    ]
+    // console.log(sqTobe)
+    // const ssq = new SSQ(2034)
+    // const newMoons = ssq.getMoons(0)
+    // console.log(newMoons.map(v => v.jd.format()))
+
+    expect(getQsRes(2034)).toEqual(sqTobe)
   })
 })
