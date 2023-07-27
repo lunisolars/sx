@@ -1,5 +1,3 @@
-import type { JD } from '@lunisolar/julian'
-
 export type DateDict = {
   year: number
   month: number
@@ -20,12 +18,10 @@ export type LunarMonth = {
   len: number
   month: number
   dayJdn: number
-  dayJd: JD
   solarTerms: {
     value: number
     idx: number
     jdn: number
-    jd: JD
   }[]
 }
 
