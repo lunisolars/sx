@@ -1,4 +1,5 @@
-import { SSQ } from '../../src/class/ssq'
+import { YTM } from '../../src/class/ytm'
+import { JD } from '@lunisolar/julian'
 
 const solarTermNames = [
   '小寒',
@@ -28,22 +29,26 @@ const solarTermNames = [
 ]
 
 function getQsRes(year: number) {
-  const ssq = new SSQ(year)
+  const ssq = new YTM(year)
   const solarTerms = ssq.getSolarTerms(0)
   const newMoons = ssq.getMoons(0)
-  const yearQS = ssq.getQS()
+  const yearQS = ssq.getTM()
   const res = []
   for (let i = 0; i < 13; i++) {
     const v = yearQS.lunarMonths[i]
     const item = []
-    const mStr = `${v.isLeap ? '闰' : ''}${v.month + 1}${
-      v.len === 30 ? '大' : '小'
-    } ${v.dayJd.format('MM-DD')}(${newMoons[i].jd.format('DD HH:mm:ss')})`
+    const dayJd = new JD(v.dayJdn, { isUTC: true, offset: 480 })
+    const newMoonJd = new JD(newMoons[i].jdn)
+    const mStr = `${v.isLeap ? '闰' : ''}${v.month + 1}${v.len === 30 ? '大' : '小'} ${dayJd.format(
+      'MM-DD'
+    )}(${newMoonJd.format('DD HH:mm:ss')})`
     item.push(mStr)
     v.solarTerms.forEach(stv => {
-      const s = `${solarTermNames[stv.value]} ${stv.jd.format('MM-DD')}(${solarTerms[
-        stv.idx
-      ].jd.format('DD HH:mm:ss')})`
+      const stvJd = new JD(stv.jdn, { isUTC: true })
+      const solarTermJd = new JD(solarTerms[stv.idx].jdn)
+      const s = `${solarTermNames[stv.value]} ${stvJd.format('MM-DD')}(${solarTermJd.format(
+        'DD HH:mm:ss'
+      )})`
       item.push(s)
     })
     res.push(item)
@@ -51,8 +56,8 @@ function getQsRes(year: number) {
   return res
 }
 
-describe('test SSQ Class', () => {
-  it('test SSQ 2023', () => {
+describe('test YTM Class', () => {
+  it('test YTM 2023', () => {
     const sqTobe = [
       ['11小 11-24(24 06:57:12)', '大雪 12-07(07 11:46:15)', '冬至 12-22(22 05:48:11)'],
       ['12大 12-23(23 18:16:51)', '小寒 01-05(05 23:04:49)', '大寒 01-20(20 16:29:31)'],
@@ -72,7 +77,7 @@ describe('test SSQ Class', () => {
     expect(getQsRes(2023)).toEqual(sqTobe)
   })
 
-  it('test SSQ 2034', () => {
+  it('test YTM 2034', () => {
     const sqTobe = [
       [
         '11大 11-22(22 09:38:56)',
@@ -99,7 +104,7 @@ describe('test SSQ Class', () => {
       ['10大 11-11(11 09:16:01)', '小雪 11-22(22 14:04:43)', '大雪 12-07(07 09:36:34)']
     ]
     // console.log(sqTobe)
-    // const ssq = new SSQ(2034)
+    // const ssq = new YTM(2034)
     // const newMoons = ssq.getMoons(0)
     // console.log(newMoons.map(v => v.jd.format()))
 

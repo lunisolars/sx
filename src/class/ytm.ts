@@ -5,9 +5,8 @@ import { dtT } from '../utils/deltaT'
 import { year2Ayear, int2 } from '../utils/func'
 import { xl1Calc } from '../utils/eph0'
 import { cache } from '@lunisolar/utils'
-import { JD } from '@lunisolar/julian'
+// import { JD } from '@lunisolar/julian'
 import { LunarMonth } from '../../typings/types'
-// const { floor } = Math
 
 /************************
   实气实朔计算器
@@ -63,7 +62,11 @@ export function uncompressQS(s: string) {
   return s
 }
 
-export class SSQ {
+/**
+ * Year's solar term and new moon
+ * 年的节气和朔
+ */
+export class YTM {
   //实朔实气计算器
   static readonly SB = uncompressQS(SUO_S) //朔修正表
   static readonly QB = uncompressQS(QI_S) //气修正表
@@ -166,19 +169,19 @@ export class SSQ {
       //平气朔表中首个之前，使用现代天文算法。1960.1.1以后，使用现代天文算法 (这一部分调用了qi_high和so_high,所以需星历表支持)
       // 2451551是2000.1.7的那个朔日,黄经差为0.定朔计算
       return (
-        Math.floor(SSQ.soHigh(Math.floor((jdn + pc - 2451551) / 29.5306) * Math.PI * 2) + 0.5) +
+        Math.floor(YTM.soHigh(Math.floor((jdn + pc - 2451551) / 29.5306) * Math.PI * 2) + 0.5) +
         J2000
       )
     } else if (jdn >= f1 && jdn < f2) {
       // 平朔
-      return SSQ.averageQS(jdn, 1)
+      return YTM.averageQS(jdn, 1)
     } else if (jdn >= f2 && jdn < f3) {
       // 定朔
       let d =
-        Math.floor(SSQ.soLow(Math.floor((jdn + pc - 2451551) / 29.5306) * Math.PI * 2) + 0.5) +
+        Math.floor(YTM.soLow(Math.floor((jdn + pc - 2451551) / 29.5306) * Math.PI * 2) + 0.5) +
         J2000 //2451551是2000.1.7的那个朔日,黄经差为0.定朔计算
       const start = Math.floor((jdn - f2) / 29.5306)
-      const n = SSQ.SB.slice(start, start + 1) //找定朔修正值
+      const n = YTM.SB.slice(start, start + 1) //找定朔修正值
       // let n = this.SB.substr(Math.floor((jdn - f2) / 29.5306), 1) //找定朔修正值
       if (n === '1') return d + 1
       if (n === '2') return d - 1
@@ -194,18 +197,18 @@ export class SSQ {
     const f3 = 2436935
     if (jdn < f1 || jdn >= f3) {
       return int2(
-        SSQ.qiHigh((int2(((jdn + pc - 2451259) / T_YEAR_DAYS) * 24) * Math.PI) / 12) + 0.5 + J2000
+        YTM.qiHigh((int2(((jdn + pc - 2451259) / T_YEAR_DAYS) * 24) * Math.PI) / 12) + 0.5 + J2000
       )
     } else if (jdn >= f1 && jdn < f2) {
       // 平气
-      return SSQ.averageQS(jdn, 0)
+      return YTM.averageQS(jdn, 0)
     } else {
       // 定气
       const d =
-        int2(SSQ.qiLow((int2(((jdn + pc - 2451259) / T_YEAR_DAYS) * 24) * Math.PI) / 12) + 0.5) +
+        int2(YTM.qiLow((int2(((jdn + pc - 2451259) / T_YEAR_DAYS) * 24) * Math.PI) / 12) + 0.5) +
         J2000 //2451259是1999.3.21,太阳视黄经为0,春分.定气计算
       const start = int2(((jdn - f2) / T_YEAR_DAYS) * 24)
-      const n = SSQ.QB.slice(start, start + 1) //找定气修正值
+      const n = YTM.QB.slice(start, start + 1) //找定气修正值
       if (n === '1') return d + 1
       // if (n === '2') return d - 1
       return d
@@ -234,10 +237,10 @@ export class SSQ {
       T = MS_aLonT((n0 + i + angle / 360) * 2 * Math.PI) //精确时间计算,入口参数是当年各朔望黄经
       const r = xl1Calc(2, T, -1) //计算月亮
       const jdn = T * 36525 + J2000 - dtT(T * 36525)
-      const jd = new JD(jdn)
+      // const jd = new JD(jdn)
       return {
         jdn,
-        jd,
+        // jd,
         r // 月地距离
       }
     }
@@ -257,7 +260,7 @@ export class SSQ {
   getD0() {
     const d0 = int2((this.year - 2000) * T_YEAR_DAYS + 180)
     let w = Math.floor((d0 - 355 + 183) / T_YEAR_DAYS) * T_YEAR_DAYS + 355 + J2000 //355是2000.12冬至,得到较靠近jd的冬至估计值
-    if (SSQ.calcSolarTerm(w) > d0 + J2000) w -= T_YEAR_DAYS
+    if (YTM.calcSolarTerm(w) > d0 + J2000) w -= T_YEAR_DAYS
     return w
   }
 
@@ -267,41 +270,45 @@ export class SSQ {
   @cache('ssq:getWinterSolstice')
   getWinterSolstice() {
     const d0 = this.getD0()
-    const w = SSQ.calcSolarTerm(d0)
-    return SSQ.calcSolarTerm(w)
+    const w = YTM.calcSolarTerm(d0)
+    return YTM.calcSolarTerm(w)
   }
 
   @cache('ssq:getNewMoonDays')
   getNewMoonDays() {
     //今年"首朔"的日月黄经差w
     const ws = this.getWinterSolstice()
-    let w = SSQ.calcNewMoon(ws) //求较靠近冬至的朔日
+    let w = YTM.calcNewMoon(ws) //求较靠近冬至的朔日
     if (w > ws) w -= 29.53
     const res = []
     //该年所有朔,包含14个月的始末
     for (let i = 0; i < 15; i++) {
-      const jdn = SSQ.calcNewMoon(w + 29.5306 * i)
+      const jdn = YTM.calcNewMoon(w + 29.5306 * i) - 8 / 24
       res[i] = {
-        jdn,
-        jd: new JD(jdn, { isUTC: true })
+        jdn
+        // jd: new JD(jdn, { isUTC: true })
       }
     }
     return res
   }
 
-  getSolarTerms(flag: 0 | 1 = 0): { value: number; jdn: number; jd: JD }[] {
+  /**
+   * 取得节气列表
+   * @param flag 当为1：仅精确到北京时间的日，当为0时，精确到时
+   */
+  getSolarTerms(flag: 0 | 1 = 0): { value: number; jdn: number }[] {
     const n = 28
     if (flag === 1) {
       const d0 = this.getD0()
-      const w = SSQ.calcSolarTerm(d0)
+      const w = YTM.calcSolarTerm(d0)
       const zq = []
       for (let i = -2; i < n; i++) {
-        const jdn = SSQ.calcSolarTerm(w + 15.2184 * i)
-        const jd = new JD(jdn, { isUTC: true })
+        const jdn = YTM.calcSolarTerm(w + 15.2184 * i) - 8 / 24
+        // const jd = new JD(jdn, { isUTC: true })
         zq.push({
           value: (i + 23) % 24,
-          jd,
-          jdn //25个节气时刻(北京时间),从冬至开始到下一个冬至以后
+          // jd,
+          jdn //25个节气时刻(北京时间), 从冬至开始到下一个冬至以后
         })
       }
       return zq
@@ -313,10 +320,10 @@ export class SSQ {
       const T = S_aLonT((y + (i * 15) / 360 + 1) * 2 * Math.PI) //精确节气时间计算
       const jdn = T * 36525 + J2000 - dtT(T * 36525)
       const xn = (i + 6) % 24
-      const jd = new JD(jdn)
+      // const jd = new JD(jdn)
       const item = {
         value: (xn + 23) % 24,
-        jd,
+        // jd,
         jdn
       }
       res.push(item)
@@ -324,7 +331,15 @@ export class SSQ {
     return res
   }
 
-  getQS() {
+  /**
+   * get Solar Terms and New Moon Days
+   * @returns {{
+      solarTerms,
+      newMoonDays,
+      lunarMonths
+    }}
+   */
+  getTM() {
     //该年的气
     // const d0 = this.getD0()
     const solarTerms = this.getSolarTerms(1)
@@ -346,17 +361,17 @@ export class SSQ {
         yy = year + i - 1
         //颁行历年首, 闰月名称, 月建
         if (yy >= -721) {
-          ns[i] = SSQ.calcNewMoon(1457698 + int2(0.342 + (yy + 721) * 12.368422) * 29.5306)
+          ns[i] = YTM.calcNewMoon(1457698 + int2(0.342 + (yy + 721) * 12.368422) * 29.5306)
           ns[i + 3] = 13 // 十三月为闰月
           ns[i + 6] = 2 //春秋历,ly为-722.12.17
         }
         if (yy >= -479) {
-          ns[i] = SSQ.calcNewMoon(1546083 + int2(0.5 + (yy + 479) * 12.368422) * 29.5306)
+          ns[i] = YTM.calcNewMoon(1546083 + int2(0.5 + (yy + 479) * 12.368422) * 29.5306)
           ns[i + 3] = 13 // 十三月为闰月
           ns[i + 6] = 2 //战国历,ly为-480.12.11
         }
         if (yy >= -220) {
-          ns[i] = SSQ.calcNewMoon(1640641 + int2(0.866 + (yy + 220) * 12.369) * 29.5306)
+          ns[i] = YTM.calcNewMoon(1640641 + int2(0.866 + (yy + 220) * 12.369) * 29.5306)
           ns[i + 3] = 209 // 后九用209表示
           ns[i + 6] = 11 //秦汉历,ly为-221.10.31
         }
@@ -372,6 +387,7 @@ export class SSQ {
     //无中气置闰法确定闰月,(气朔结合法,数据源需有冬至开始的的气和朔)
     let leapIdx = -1
     if (newMoonDays[13].jdn <= solarTerms[26].jdn) {
+      console.log()
       //第13月的月末没有超过冬至(不含冬至),说明今年含有13个月
       for (let i = 0; newMoonDays[i + 1].jdn > solarTerms[2 * i + 2].jdn && i < 13; i++) {
         leapIdx = i
@@ -391,7 +407,7 @@ export class SSQ {
         len: mLen[i],
         isLeap: leapIdx === i,
         dayJdn: newMoonDays[i].jdn,
-        dayJd: newMoonDays[i].jd,
+        // dayJd: newMoonDays[i].jd,
         solarTerms: []
       }
       let mc = (monthIdx + 10) % 12 //月建对应的默认月名称：建子十一,建丑十二,建寅为正……
@@ -408,7 +424,7 @@ export class SSQ {
           lunarMonth.solarTerms.push({
             idx: j,
             value: solarTerms[j].value,
-            jd: solarTerms[j].jd,
+            // jd: solarTerms[j].jd,
             jdn: solarTerms[j].jdn
           })
         } else if (lunarMonth.solarTerms.length > 0) {
