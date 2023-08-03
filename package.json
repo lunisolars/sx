@@ -14,7 +14,7 @@
   "keywords": [],
   "repository": {
     "type": "git",
-    "url": "git@github.com:lunisolar-js/sx.git"
+    "url": "git@github.com:lunisolars/sx.git"
   },
   "license": "MIT",
   "devDependencies": {
